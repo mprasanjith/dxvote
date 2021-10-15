@@ -34,6 +34,13 @@ jobs:
         with:
           workflow-run-id: ${{ github.event.workflow_run.id }}
 
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: preview-build.yml
+          workflow_conclusion: success
+          commit: ${{ steps.workflow-run-info.outputs.targetCommitSha }}
+
       - name: Deploy to IPFS
         uses: web3-storage/add-to-web3@v1
         id: web3
