@@ -14,9 +14,6 @@ jobs:
       matrix:
         node-version: [14.17.6]
     steps:
-      - name: Setup deploy workflow
-        uses: haya14busa/action-workflow_run-status@v1
-
       - name: Get build workflow details
         uses: potiuk/get-workflow-origin@v1_3
         id: source-run-info
