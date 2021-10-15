@@ -28,6 +28,8 @@ jobs:
           step: start
           token: ${{ secrets.GITHUB_TOKEN }}
           env: ${{ steps.source-run-info.outputs.sourceHeadBranch }}
+          no_override: false
+          ref: ${{ steps.source-run-info.outputs.sourceHeadBranch }}
 
       - name: Download artifact from build workflow
         uses: dawidd6/action-download-artifact@v2
