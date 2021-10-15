@@ -30,11 +30,6 @@ jobs:
           env: ${{ steps.source-run-info.outputs.sourceHeadBranch }}
 
       - name: Download artifact from build workflow
-        uses: synergy-au/download-workflow-artifacts-action@v1
-        with:
-          workflow-run-id: ${{ github.event.workflow_run.id }}
-
-      - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: preview-build.yml
