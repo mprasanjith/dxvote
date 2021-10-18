@@ -36,6 +36,7 @@ jobs:
         with:
           workflow: preview-build.yml
           workflow_conclusion: success
+          name: ${{ steps.workflow-run-info.outputs.targetCommitSha }}
           commit: ${{ steps.workflow-run-info.outputs.targetCommitSha }}
           path: 'build'
 
@@ -44,7 +45,7 @@ jobs:
         id: web3
         with:
           web3_token: ${{ secrets.WEB3_STORAGE_TOKEN }}
-          path_to_add: 'build'
+          path_to_add: 'build/${{ steps.workflow-run-info.outputs.targetCommitSha }}'
  
       - name: Update DNS record for Develop branch
         run: npx dnslink-cloudflare --domain dxvote.dev --record _dnslink.develop --link /ipfs/${{ steps.web3.outputs.cid }}
@@ -66,3 +67,15 @@ jobs:
           status: ${{ job.status }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: 'https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link'
+
+      - name: Create comment with status
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ steps.source-run-info.outputs.pullRequestNumber }}
+        with:
+          issue-number: ${{ steps.source-run-info.outputs.pullRequestNumber }}
+          body: |
+            ✔️ Preview deployment is ready!
+
+            🔨 Explore the source changes: ${{ steps.source-run-info.outputs.mergeCommitSha }}
+
+            😎 Browse the preview: https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link
