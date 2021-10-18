@@ -31,13 +31,12 @@ jobs:
           no_override: false
           ref: ${{ steps.source-run-info.outputs.sourceHeadBranch }}
 
-      - name: Download artifact from build workflow
+      - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: preview-build.yml
           workflow_conclusion: success
           name: ${{ steps.source-run-info.outputs.targetCommitSha }}
-          commit: ${{ steps.source-run-info.outputs.targetCommitSha }}
           path: 'build'
 
       - name: Deploy to IPFS
@@ -45,7 +44,7 @@ jobs:
         id: web3
         with:
           web3_token: ${{ secrets.WEB3_STORAGE_TOKEN }}
-          path_to_add: 'build'
+          path_to_add: 'build/${{ steps.source-run-info.outputs.targetCommitSha }}'
  
       - name: Update DNS record for Develop branch
         run: npx dnslink-cloudflare --domain dxvote.dev --record _dnslink.develop --link /ipfs/${{ steps.web3.outputs.cid }}
