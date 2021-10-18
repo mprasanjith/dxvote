@@ -66,3 +66,15 @@ jobs:
           status: ${{ job.status }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: 'https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link'
+
+      - name: Create comment with status
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ steps.source-run-info.outputs.pullRequestNumber }}
+        with:
+          issue-number: ${{ steps.source-run-info.outputs.pullRequestNumber }}
+          body: |
+            ✔️ Preview deployment is ready!
+
+            🔨 Explore the source changes: ${{ steps.source-run-info.outputs.mergeCommitSha }}
+
+            😎 Browse the preview: https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link
