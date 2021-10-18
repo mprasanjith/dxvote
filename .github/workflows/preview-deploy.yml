@@ -45,7 +45,7 @@ jobs:
         with:
           web3_token: ${{ secrets.WEB3_STORAGE_TOKEN }}
           path_to_add: 'build/${{ steps.source-run-info.outputs.targetCommitSha }}'
- 
+
       - name: Update DNS record for Develop branch
         run: npx dnslink-cloudflare --domain dxvote.dev --record _dnslink.develop --link /ipfs/${{ steps.web3.outputs.cid }}
         env:
