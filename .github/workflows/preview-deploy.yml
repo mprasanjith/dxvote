@@ -36,6 +36,7 @@ jobs:
         with:
           workflow: preview-build.yml
           workflow_conclusion: success
+          name: ${{ steps.workflow-run-info.outputs.targetCommitSha }}
           commit: ${{ steps.workflow-run-info.outputs.targetCommitSha }}
           path: 'build'
 
