@@ -11,15 +11,16 @@ import { getChains } from 'provider/connectors';
 
 import arbitrumIcon from '../../assets/images/arbitrum.png';
 import ethereumIcon from '../../assets/images/ethereum.svg';
-import xdaiIcon from '../../assets/images/xdai.svg';
+import gnosisIcon from '../../assets/images/gnosis-icon-green.svg';
 
 const iconsByChain = {
   1: ethereumIcon,
   4: ethereumIcon,
-  100: xdaiIcon,
+  100: gnosisIcon,
   42161: arbitrumIcon,
-  421611: arbitrumIcon
-}
+  421611: arbitrumIcon,
+  1337: ethereumIcon,
+};
 const Wrapper = styled.div`
   ${({ theme }) => theme.flexColumnNoWrap}
   margin: 0;
@@ -66,7 +67,7 @@ const NetworkModal = observer(() => {
   const {
     context: { modalStore, providerStore },
   } = useContext();
-  const { chainId, connector } = providerStore.getActiveWeb3React();
+  const { chainId, connector, deactivate } = providerStore.getActiveWeb3React();
   const rpcUrls = useRpcUrls();
   const history = useHistory();
   const [networkErrorMessage, setNetworkErrorMessage] = useState(false);
@@ -105,9 +106,10 @@ const NetworkModal = observer(() => {
         }
       }
     } else {
-      history.push(`/${chain.name}/proposals`);
-      window.location.reload();
+      deactivate();
     }
+
+    history.push(`/${chain.name}/proposals`);
   };
 
   // get networks user can switch to

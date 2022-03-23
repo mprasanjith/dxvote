@@ -1,4 +1,4 @@
-import { ChainConfig } from 'types';
+import { ChainConfig } from '../types/types';
 
 export const MAX_UINT =
   '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
@@ -11,14 +11,29 @@ export const ERC20_TRANSFER_SIGNATURE = '0xa9059cbb';
 export const ERC20_APPROVE_SIGNATURE = '0x095ea7b3';
 export const DEFAULT_TOKEN_DECIMALS = 18;
 
-const defaultAlchemyKey = process.env.REACT_APP_KEY_ALCHEMY_API_KEY;
+export const MAX_BLOCKS_PER_EVENTS_FETCH: number = 1000000;
+
+export const CACHE_METADATA_ENS = 'cache.dxvote.eth';
+
+const defaultAlchemyKey = '7i7fiiOx1b7bGmgWY_oI9twyQBCsuXKC';
+
+export const DISCOURSE_URL_ROOT = 'https://daotalk.org';
+
+export const DEFUALT_CHAIN_ID = 1;
+
+export const POKT_NETWORK_URLS = {
+  '1': 'https://eth-archival.gateway.pokt.network/v1/lb/61f86d630d66d80038fb8c38',
+  '4': 'https://eth-rinkeby.gateway.pokt.network/v1/lb/61116c81a585a20035149067',
+  '100':
+    'https://poa-xdai-archival.gateway.pokt.network/v1/lb/61d897d4a065f5003a113d9a',
+};
 
 export const NETWORKS: ChainConfig[] = [
   {
     id: 1,
     name: 'mainnet',
     displayName: 'Ethereum Mainnet',
-    defaultRpc: `https://eth-mainnet.alchemyapi.io/v2/${defaultAlchemyKey}`,
+    defaultRpc: POKT_NETWORK_URLS['1'],
     nativeAsset: {
       name: 'Ethereum',
       symbol: 'ETH',
@@ -31,7 +46,7 @@ export const NETWORKS: ChainConfig[] = [
     id: 4,
     name: 'rinkeby',
     displayName: 'Rinkeby Testnet',
-    defaultRpc: `https://eth-rinkeby.alchemyapi.io/v2/${defaultAlchemyKey}`,
+    defaultRpc: POKT_NETWORK_URLS['4'],
     nativeAsset: {
       name: 'Ethereum',
       symbol: 'ETH',
@@ -43,8 +58,8 @@ export const NETWORKS: ChainConfig[] = [
   {
     id: 100,
     name: 'xdai',
-    displayName: 'xDai Chain',
-    defaultRpc: `https://rpc.xdaichain.com/`,
+    displayName: 'Gnosis Chain',
+    defaultRpc: POKT_NETWORK_URLS['100'],
     nativeAsset: {
       name: 'xDai',
       symbol: 'xDAI',
@@ -82,7 +97,7 @@ export const NETWORKS: ChainConfig[] = [
     id: 1337,
     name: 'localhost',
     displayName: 'Localhost',
-    defaultRpc: `http://localhost:8545`,
+    defaultRpc: `http://127.0.0.1:8545`,
     nativeAsset: {
       name: 'Ethereum',
       symbol: 'ETH',
@@ -96,6 +111,22 @@ export const NETWORK_NAMES: Record<ChainConfig['id'], ChainConfig['name']> =
     acc[network.id] = network.name;
     return acc;
   }, {});
+
+export const getNetworkByName = function (networkName: string): ChainConfig {
+  return NETWORKS.find(network => network.name == networkName);
+};
+
+export const getNetworkById = function (networkId: number): ChainConfig {
+  return NETWORKS.find(network => network.id == networkId);
+};
+
+export const NETWORK_DISPLAY_NAMES: Record<
+  ChainConfig['id'],
+  ChainConfig['displayName']
+> = NETWORKS.reduce((acc, network) => {
+  acc[network.id] = network.displayName;
+  return acc;
+}, {});
 
 export const DEFAULT_RPC_URLS: Record<
   ChainConfig['id'],

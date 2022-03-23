@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { observer } from 'mobx-react';
-import { shortenAddress, toCamelCaseString } from '../../utils';
+import { toCamelCaseString } from '../../utils';
 import WalletModal from 'components/WalletModal';
 import { getChains, injected, isChainIdSupported } from 'provider/connectors';
 import { useContext } from '../../contexts';
@@ -8,6 +8,7 @@ import { Box } from '../../components/common';
 import NetworkModal from 'components/NetworkModal';
 import { useEffect, useState } from 'react';
 import { useRpcUrls } from 'provider/providerHooks';
+import BlockchainLink from '../common/BlockchainLink';
 
 const WrongNetworkButton = styled(Box)`
   color: var(--dark-text-gray);
@@ -94,7 +95,6 @@ const Web3ConnectStatus = observer(props => {
   };
 
   function getWalletStatus() {
-    console.debug('[GetWalletStatus]', { account });
     if (injectedWalletAuthorized && !account) {
       const chains = getChains(rpcUrls);
       const activeChain =
@@ -109,7 +109,7 @@ const Web3ConnectStatus = observer(props => {
     } else if (account) {
       return (
         <AccountButton onClick={toggleWalletModal}>
-          {shortenAddress(account)}
+          <BlockchainLink text={account} onlyText />
         </AccountButton>
       );
     } else {
@@ -122,7 +122,6 @@ const Web3ConnectStatus = observer(props => {
   }
 
   function getNetworkStatus() {
-    console.debug('[GetNetworkStatus]', { chainId, error });
     // Wrong network
     if ((chainId && !isChainIdSupported(chainId)) || error) {
       return (
@@ -134,7 +133,7 @@ const Web3ConnectStatus = observer(props => {
       return (
         <div style={{ display: 'flex' }}>
           <ChainButton onClick={toggleNetworkModal}>
-            {toCamelCaseString(configStore.getActiveChainName())}
+            {toCamelCaseString(configStore.getActiveChainDisplayName())}
           </ChainButton>
         </div>
       );

@@ -2,15 +2,13 @@ import RootContext from '../contexts';
 import { makeObservable, observable, action } from 'mobx';
 import { Web3ReactContextInterface } from '@web3-react/core/dist/types';
 import { isChainIdSupported } from '../provider/connectors';
-import { ContractType } from './Provider';
-import { bnum } from '../utils';
-import { getUpdatedCache } from '../cache';
+import { CacheLoadError } from '../utils/errors';
+
+const targetCacheVersion = 1;
 
 export default class BlockchainStore {
   activeFetchLoop: boolean = false;
   initialLoadComplete: boolean;
-  contractStorage: ContractStorage = {};
-  eventsStorage: EventStorage = {};
   context: RootContext;
 
   constructor(context) {
@@ -18,151 +16,32 @@ export default class BlockchainStore {
     makeObservable(this, {
       activeFetchLoop: observable,
       initialLoadComplete: observable,
-      updateStore: action,
       fetchData: action,
+      reset: action,
     });
   }
 
-  reduceMulticall(
-    calls: Call[],
-    results: any,
-    blockNumber: number
-  ): CallEntry[] {
-    const { multicallService } = this.context;
-    return calls.map((call, index) => {
-      const value = multicallService.decodeCall(call, results[index]);
-      return {
-        contractType: call.contractType,
-        address: call.address,
-        method: call.method,
-        params: call.params,
-        response: {
-          value: value,
-          lastFetched: blockNumber,
-        },
-      };
-    });
-  }
-
-  async executeAndUpdateMulticall(multicallService) {
-    const multicallResponse = await multicallService.executeCalls();
-    this.updateStore(
-      this.reduceMulticall(
-        multicallResponse.calls,
-        multicallResponse.results,
-        multicallResponse.blockNumber
-      ),
-      multicallResponse.blockNumber
-    );
-    multicallService.resetActiveCalls();
-  }
-
-  has(entry: Call): boolean {
-    const params = entry.params ? entry.params : [];
-    return (
-      !!this.contractStorage[entry.contractType] &&
-      !!this.contractStorage[entry.contractType][entry.address] &&
-      !!this.contractStorage[entry.contractType][entry.address][entry.method] &&
-      !!this.contractStorage[entry.contractType][entry.address][entry.method][
-        params.toString()
-      ]
-    );
-  }
-
-  getCachedValue(entry: Call) {
-    if (this.has(entry)) {
-      return this.get(entry).value.toString();
-    } else {
-      return undefined;
-    }
-  }
-
-  getCachedEvents(address: string, eventName: string) {
-    if (this.eventsStorage[address] && this.eventsStorage[address][eventName])
-      return this.eventsStorage[address][eventName].emitions;
-    else return [];
-  }
-
-  get(entry: Call): CallValue | undefined {
-    if (this.has(entry)) {
-      const params = entry.params ? entry.params : [];
-      return this.contractStorage[entry.contractType][entry.address][
-        entry.method
-      ][params.toString()];
-    } else {
-      return undefined;
-    }
-  }
-
-  updateStore(entries: CallEntry[], blockNumber: number) {
-    entries.forEach(entry => {
-      const params = entry.params ? entry.params : [];
-      if (!this.contractStorage[entry.contractType]) {
-        this.contractStorage[entry.contractType] = {};
-      }
-
-      if (!this.contractStorage[entry.contractType][entry.address]) {
-        this.contractStorage[entry.contractType][entry.address] = {};
-      }
-
-      if (
-        !this.contractStorage[entry.contractType][entry.address][entry.method]
-      ) {
-        this.contractStorage[entry.contractType][entry.address][entry.method] =
-          {};
-      }
-
-      if (
-        !this.contractStorage[entry.contractType][entry.address][entry.method][
-          params.toString()
-        ]
-      ) {
-        this.contractStorage[entry.contractType][entry.address][entry.method][
-          params.toString()
-        ] = {
-          value: entry.response.value,
-          lastFetched: entry.response.lastFetched,
-        };
-      }
-
-      const oldEntry =
-        this.contractStorage[entry.contractType][entry.address][entry.method][
-          params.toString()
-        ];
-
-      // Set if never fetched, or if the new data isn't stale
-      if (
-        !oldEntry.lastFetched ||
-        (oldEntry.lastFetched && oldEntry.lastFetched <= blockNumber)
-      ) {
-        this.contractStorage[entry.contractType][entry.address][entry.method][
-          params.toString()
-        ] = {
-          value: entry.response.value,
-          lastFetched: entry.response.lastFetched,
-        };
-      }
-    });
+  reset() {
+    this.activeFetchLoop = false;
+    this.initialLoadComplete = false;
   }
 
   async fetchData(web3React: Web3ReactContextInterface, reset: boolean) {
     if (
-      !this.activeFetchLoop ||
-      (reset &&
-        web3React &&
-        web3React.active &&
-        isChainIdSupported(web3React.chainId))
+      (!this.activeFetchLoop || reset) &&
+      web3React &&
+      web3React.active &&
+      isChainIdSupported(web3React.chainId)
     ) {
       const {
         providerStore,
         configStore,
-        multicallService,
         ipfsService,
         daoStore,
         notificationStore,
+        cacheService,
       } = this.context;
 
-      
       this.initialLoadComplete = reset ? false : this.initialLoadComplete;
       this.activeFetchLoop = true;
       if (reset) notificationStore.reset();
@@ -174,19 +53,35 @@ export default class BlockchainStore {
 
         notificationStore.setGlobalLoading(
           true,
+          'Looking for latest chain configurations'
+        );
+        await configStore.loadNetworkConfig();
+
+        notificationStore.setGlobalLoading(
+          true,
           'Looking for existing cache data'
         );
         const cache = await caches.open(`dxvote-cache`);
         let match = await cache.match(networkName);
-        let networkCache = null;
+        let networkCache: DaoNetworkCache & { baseCacheIpfsHash?: string } =
+          null;
         if (match) {
           networkCache = JSON.parse(await match.text());
         }
 
+        if (
+          networkCache &&
+          (!networkCache?.version ||
+            networkCache?.version !== targetCacheVersion)
+        ) {
+          console.log('[Upgrade Cache]');
+          networkCache = null;
+        }
+
         const blockNumber = (await library.eth.getBlockNumber()) - 1;
 
-        // Fetch cache from ipfs if not in localStorage or newer hash is available
         const newestCacheIpfsHash = configStore.getCacheIPFSHash(networkName);
+
         if (
           !networkCache ||
           !(newestCacheIpfsHash === networkCache.baseCacheIpfsHash)
@@ -202,7 +97,7 @@ export default class BlockchainStore {
           networkCache.baseCacheIpfsHash = newestCacheIpfsHash;
         }
 
-        const lastCheckedBlockNumber = networkCache.l1BlockNumber;
+        const lastCheckedBlockNumber = networkCache.blockNumber;
 
         if (blockNumber > lastCheckedBlockNumber + 1) {
           console.debug(
@@ -211,11 +106,11 @@ export default class BlockchainStore {
             chainId
           );
 
-          const fromBlock = lastCheckedBlockNumber;
+          const fromBlock = lastCheckedBlockNumber + 1;
           const toBlock = blockNumber;
           const networkContracts = configStore.getNetworkContracts();
 
-          networkCache = await getUpdatedCache(
+          networkCache = await cacheService.getUpdatedCache(
             this.context,
             networkCache,
             networkContracts,
@@ -224,52 +119,23 @@ export default class BlockchainStore {
             library
           );
 
-          notificationStore.setGlobalLoading(true, 'Fetching token balances');
-          let tokensBalancesCalls = [];
-          const tokens = configStore.getTokensToFetchPrice();
-          tokens.map(token => {
-            if (!networkCache.daoInfo.tokenBalances[token.address])
-              tokensBalancesCalls.push({
-                contractType: ContractType.ERC20,
-                address: token.address,
-                method: 'balanceOf',
-                params: [networkContracts.avatar],
-              });
-            Object.keys(networkCache.schemes).map(schemeAddress => {
-              if (
-                networkCache.schemes[schemeAddress].controllerAddress !==
-                networkContracts.controller
-              )
-                tokensBalancesCalls.push({
-                  contractType: ContractType.ERC20,
-                  address: token.address,
-                  method: 'balanceOf',
-                  params: [schemeAddress],
-                });
-            });
+          notificationStore.setGlobalLoading(
+            true,
+            `Getting proposal titles form ipfs`
+          );
+          const proposalTitles = await cacheService.getProposalTitlesFromIPFS(
+            networkCache,
+            configStore.getProposalTitlesInBuild()
+          );
+
+          Object.keys(networkCache.proposals).map(proposalId => {
+            networkCache.proposals[proposalId].title =
+              networkCache.proposals[proposalId].title ||
+              proposalTitles[proposalId] ||
+              '';
           });
 
-          if (tokensBalancesCalls.length > 0)
-            multicallService.addCalls(tokensBalancesCalls);
-          await this.executeAndUpdateMulticall(multicallService);
-
-          tokensBalancesCalls.map(tokensBalancesCall => {
-            if (tokensBalancesCall.params[0] === networkContracts.avatar) {
-              networkCache.daoInfo.tokenBalances[tokensBalancesCall.address] =
-                this.context.blockchainStore.getCachedValue(
-                  tokensBalancesCall
-                ) || bnum(0);
-            } else {
-              networkCache.schemes[tokensBalancesCall.params[0]].tokenBalances[
-                tokensBalancesCall.address
-              ] =
-                this.context.blockchainStore.getCachedValue(
-                  tokensBalancesCall
-                ) || bnum(0);
-            }
-          });
-
-          networkCache.l1BlockNumber = toBlock;
+          networkCache.blockNumber = toBlock;
           providerStore.setCurrentBlockNumber(toBlock);
 
           notificationStore.setGlobalLoading(true, 'Saving updated cache');
@@ -283,8 +149,12 @@ export default class BlockchainStore {
         notificationStore.setFirstLoadComplete();
         this.activeFetchLoop = false;
       } catch (error) {
-        console.error((error as Error).message);
-        notificationStore.setGlobalError(true, (error as Error).message);
+        console.error(error);
+        if (!this.initialLoadComplete) {
+          notificationStore.setGlobalError(true, (error as Error).message);
+        } else {
+          throw new CacheLoadError(error.message);
+        }
         this.activeFetchLoop = false;
       }
     }

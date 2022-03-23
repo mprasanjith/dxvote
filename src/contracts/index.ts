@@ -6,6 +6,7 @@ const DXDVotingMachine = require('./DXDVotingMachine');
 const GenesisProtocol = require('./GenesisProtocol');
 const ERC20 = require('./ERC20');
 const Multicall = require('./Multicall');
+const VestingFactory = require('./DXDVestingFactory');
 
 export const getContracts = async function (
   networkConfig: NetworkContracts,
@@ -31,47 +32,47 @@ export const getContracts = async function (
     Multicall.abi,
     networkConfig.utils.multicall
   );
+  const vestingFactory =
+    networkConfig.utils.dxdVestingFactory &&
+    (await new web3.eth.Contract(
+      VestingFactory.abi,
+      networkConfig.utils.dxdVestingFactory
+    ));
 
   let votingMachines = {};
 
-  if (networkConfig.votingMachines.gen)
-    votingMachines[networkConfig.votingMachines.gen.address] = {
-      name: 'GenesisProtocol',
-      contract: await new web3.eth.Contract(
-        GenesisProtocol.abi,
-        networkConfig.votingMachines.gen.address
-      ),
-      token: await new web3.eth.Contract(
-        ERC20.abi,
-        networkConfig.votingMachines.gen.token
-      ),
-    };
-
-  if (networkConfig.votingMachines.gen2)
-    votingMachines[networkConfig.votingMachines.gen2.address] = {
-      name: 'GenesisProtocol2',
-      contract: await new web3.eth.Contract(
-        GenesisProtocol.abi,
-        networkConfig.votingMachines.gen2.address
-      ),
-      token: await new web3.eth.Contract(
-        ERC20.abi,
-        networkConfig.votingMachines.gen2.token
-      ),
-    };
-
-  if (networkConfig.votingMachines.dxd)
-    votingMachines[networkConfig.votingMachines.dxd.address] = {
-      name: 'DXDVotingMachine',
-      contract: await new web3.eth.Contract(
-        DXDVotingMachine.abi,
-        networkConfig.votingMachines.dxd.address
-      ),
-      token: await new web3.eth.Contract(
-        ERC20.abi,
-        networkConfig.votingMachines.dxd.token
-      ),
-    };
+  for (const votingMachineAddress in networkConfig.votingMachines) {
+    if (
+      networkConfig.votingMachines[votingMachineAddress].type ==
+      'GenesisProtocol'
+    )
+      votingMachines[votingMachineAddress] = {
+        name: 'GenesisProtocol',
+        contract: await new web3.eth.Contract(
+          GenesisProtocol.abi,
+          votingMachineAddress
+        ),
+        token: await new web3.eth.Contract(
+          ERC20.abi,
+          networkConfig.votingMachines[votingMachineAddress].token
+        ),
+      };
+    else if (
+      networkConfig.votingMachines[votingMachineAddress].type ==
+      'DXDVotingMachine'
+    )
+      votingMachines[votingMachineAddress] = {
+        name: 'DXDVotingMachine',
+        contract: await new web3.eth.Contract(
+          DXDVotingMachine.abi,
+          votingMachineAddress
+        ),
+        token: await new web3.eth.Contract(
+          ERC20.abi,
+          networkConfig.votingMachines[votingMachineAddress].token
+        ),
+      };
+  }
 
   return {
     votingMachines,
@@ -80,5 +81,6 @@ export const getContracts = async function (
     reputation,
     permissionRegistry,
     multicall,
+    vestingFactory,
   };
 };

@@ -46,15 +46,15 @@ const FAQPage = observer(() => {
     '- Permission Registry: ' + networkContracts.permissionRegistry + '\n';
   daoAddresses += '- Reputation: ' + networkContracts.reputation + '\n';
 
-  for (const votingMachineName in networkContracts.votingMachines) {
-    if (votingMachineName === 'dxd') {
-      daoAddresses +=
-        '- DXDVotingMachine: ' +
-        networkContracts.votingMachines[votingMachineName].address +
-        '\n';
+  for (const votingMachineAddress in networkContracts.votingMachines) {
+    if (
+      networkContracts.votingMachines[votingMachineAddress].type ===
+      '"DXDVotingMachine"'
+    ) {
+      daoAddresses += '- DXDVotingMachine: ' + votingMachineAddress + '\n';
       daoAddresses +=
         '- DXD: ' +
-        networkContracts.votingMachines[votingMachineName].token +
+        networkContracts.votingMachines[votingMachineAddress].token +
         '\n';
     }
   }
@@ -236,6 +236,8 @@ The downstake for proposal is calculated when the proposal is created, by using 
         style={{
           padding: '20px 10px',
         }}
+        skipHtml
+        escapeHtml
       />
     </FAQBox>
   );

@@ -26,7 +26,7 @@ export function shortenAddress(address, digits = 4) {
   )}`;
 }
 
-export function isAddress(value) {
+export function isAddress(value: string) {
   try {
     return ethers.utils.getAddress(value.toLowerCase());
   } catch {
@@ -52,7 +52,11 @@ export function toAddressStub(address, size = 'default') {
   }
 }
 
-export function getBlockchainLink(address, networkName, type) {
+export function getBlockchainLink(
+  address: string,
+  networkName: string,
+  type?: string
+) {
   switch (type) {
     case 'user':
       return `${window.location.pathname}#/user/${address}`;
@@ -61,18 +65,6 @@ export function getBlockchainLink(address, networkName, type) {
     default:
       return `${NETWORK_EXPLORERS[networkName]}/tx/${address}`;
   }
-}
-
-export async function getENSName(address) {
-  let name = null;
-  try {
-    const provider = ethers.getDefaultProvider();
-    const checksumed = ethers.utils.getAddress(address);
-    name = provider.lookupAddress(checksumed);
-  } catch (e) {
-    console.error(e);
-  }
-  return name;
 }
 
 export function getERC20Token(address) {

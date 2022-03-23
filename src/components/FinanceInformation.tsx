@@ -20,6 +20,12 @@ import {
   formatBalance,
 } from '../utils';
 import { NETWORK_ASSET_SYMBOL } from '../utils';
+import useExporters from '../hooks/useExporters';
+import { Button } from './common/Button';
+import { flatten } from '../utils/array';
+import moment from 'moment';
+import { useBalance } from 'hooks/useERC20';
+import { useETHBalance } from 'hooks/useETHBalance';
 
 const FinanceInfoWrapper = styled.div`
   background: white;
@@ -40,23 +46,30 @@ const CenteredRow = styled(Row)`
   padding: 0;
 `;
 
+const ExportRow = styled(CenteredRow)`
+  margin-top: 20px;
+`;
+
 const FinanceInformation = observer(() => {
   const {
     context: { daoStore, configStore, coingeckoService },
   } = useContext();
+  const { exportToCSV, triggerDownload } = useExporters();
 
-  const daoInfo = daoStore.getDaoInfo();
   const schemes = daoStore.getAllSchemes();
   const prices = coingeckoService.getPrices();
   const networkAssetSymbol =
     NETWORK_ASSET_SYMBOL[configStore.getActiveChainName()];
+
+  const networkContracts = configStore.getNetworkContracts();
+  const tokens = configStore.getTokensToFetchPrice();
 
   let assets = {
     total: [
       {
         address: ZERO_ADDRESS,
         name: networkAssetSymbol,
-        amount: bnum(daoInfo.ethBalance),
+        amount: useETHBalance(networkContracts.avatar),
         decimals: 18,
       },
     ],
@@ -64,67 +77,89 @@ const FinanceInformation = observer(() => {
       {
         address: ZERO_ADDRESS,
         name: networkAssetSymbol,
-        amount: bnum(daoInfo.ethBalance),
+        amount: useETHBalance(networkContracts.avatar),
         decimals: 18,
       },
     ],
   };
-  Object.keys(daoInfo.tokenBalances).map(tokenAddress => {
-    const tokenData = configStore.getTokenData(tokenAddress);
+  tokens.map(token => {
     assets.avatar.push({
-      address: tokenAddress,
-      name: tokenData.name,
-      amount: bnum(daoInfo.tokenBalances[tokenAddress]),
-      decimals: tokenData.decimals,
+      address: token.address,
+      name: token.name,
+      amount: useBalance(networkContracts.avatar, token.address),
+      decimals: token.decimals,
     });
     assets.total.push({
-      address: tokenAddress,
-      name: tokenData.name,
-      amount: bnum(daoInfo.tokenBalances[tokenAddress]),
-      decimals: tokenData.decimals,
+      address: token.address,
+      name: token.name,
+      amount: useBalance(networkContracts.avatar, token.address),
+      decimals: token.decimals,
     });
   });
 
   schemes.map(scheme => {
     if (scheme.controllerAddress !== ZERO_ADDRESS) return;
 
-    const tokenBalances = scheme.tokenBalances;
     if (!assets[scheme.name])
       assets[scheme.name] = [
         {
           address: ZERO_ADDRESS,
           name: networkAssetSymbol,
-          amount: bnum(scheme.ethBalance),
+          amount: useETHBalance(scheme.address),
           decimals: 18,
         },
       ];
 
-    Object.keys(tokenBalances).map(tokenAddress => {
-      const tokenData = configStore.getTokenData(tokenAddress);
-
+    tokens.map(token => {
       assets[scheme.name].push({
-        address: tokenAddress,
-        name: tokenData.name,
-        amount: bnum(tokenBalances[tokenAddress]),
-        decimals: tokenData.decimals,
+        address: token.address,
+        name: token.name,
+        amount: useBalance(scheme.address, token.address),
+        decimals: token.decimals,
       });
       const indexOfAssetInTotal = assets.total.findIndex(
-        asset => asset.address === tokenAddress
+        asset => asset.address === token.address
       );
       if (indexOfAssetInTotal > -1) {
         assets.total[indexOfAssetInTotal].amount = assets.total[
           indexOfAssetInTotal
-        ].amount.plus(bnum(tokenBalances[tokenAddress]));
+        ].amount.plus(useBalance(scheme.address, token.address));
       } else {
         assets.total.push({
-          address: tokenAddress,
-          name: tokenData.name,
-          amount: bnum(tokenBalances[tokenAddress]),
-          decimals: tokenData.decimals,
+          address: token.address,
+          name: token.name,
+          amount: useBalance(scheme.address, token.address),
+          decimals: token.decimals,
         });
       }
     });
   });
+
+  const getExportFileName = () => {
+    return `finances-${moment().format('YYYY-MM-DD')}`;
+  };
+
+  const exportData = async () => {
+    const allAssets = Object.keys(assets).map(assetHolder => {
+      const assetsOfHolder = assets[assetHolder];
+      const assetsExportable = assetsOfHolder.map(asset => ({
+        name: asset.name,
+        address: asset.address,
+        holder: parseCamelCase(assetHolder),
+        balance: formatBalance(asset.amount, asset.decimals, 2).toString(),
+        usdPrice:
+          prices[asset.address] && prices[asset.address].usd
+            ? Number(formatBalance(asset.amount, asset.decimals, 2)) *
+              prices[asset.address].usd
+            : null,
+      }));
+      return assetsExportable;
+    });
+    const assetsExportable = flatten(allAssets);
+    const csvString = await exportToCSV(assetsExportable);
+
+    triggerDownload(csvString, `${getExportFileName()}.csv`, 'text/csv');
+  };
 
   return (
     <FinanceInfoWrapper>
@@ -150,13 +185,15 @@ const FinanceInformation = observer(() => {
                         <DataCell align="left" weight="500">
                           <CenteredRow>
                             {asset.name}{' '}
-                            <BlockchainLink
-                              size="long"
-                              type="address"
-                              text={asset.address}
-                              onlyIcon
-                              toCopy
-                            />
+                            {asset.address != ZERO_ADDRESS && (
+                              <BlockchainLink
+                                size="long"
+                                type="address"
+                                text={asset.address}
+                                onlyIcon
+                                toCopy
+                              />
+                            )}
                           </CenteredRow>
                         </DataCell>
                         <DataCell align="center">
@@ -190,6 +227,10 @@ const FinanceInformation = observer(() => {
           </div>
         );
       })}
+
+      <ExportRow>
+        <Button onClick={exportData}>Export to CSV</Button>
+      </ExportRow>
     </FinanceInfoWrapper>
   );
 });

@@ -3,7 +3,12 @@ import contentHash from 'content-hash';
 import PromiEvent from 'promievent';
 import RootContext from '../contexts';
 import { ContractType } from '../stores/Provider';
-import { BigNumber, MAX_UINT } from '../utils';
+import {
+  BigNumber,
+  hashVote,
+  MAX_UINT,
+  toEthSignedMessageHash,
+} from '../utils';
 
 export default class DaoService {
   context: RootContext;
@@ -172,7 +177,7 @@ export default class DaoService {
     } else {
       return providerStore.sendTransaction(
         providerStore.getActiveWeb3React(),
-        ContractType.WalletScheme,
+        ContractType.WalletScheme1_0,
         scheme,
         'proposeCalls',
         [
@@ -193,9 +198,56 @@ export default class DaoService {
     return providerStore.sendTransaction(
       providerStore.getActiveWeb3React(),
       ContractType.VotingMachine,
-      daoStore.getVotingMachineOfProposal(proposalId),
+      daoStore.getVotingMachineOfProposal(proposalId).address,
       'vote',
       [proposalId, decision, amount, account],
+      {}
+    );
+  }
+
+  async signVote(
+    votingMachineAddress: string,
+    proposalId: string,
+    decision: string,
+    repAmount: string,
+    addSignatureDomain: boolean = true
+  ): Promise<string> {
+    const { account } = this.context.providerStore.getActiveWeb3React();
+
+    // Step 1: The Vote is hashed, and the hash is signed.
+    // keccak256(abi.encodePacked( votingMachine, proposalId, voter, voteDecision, amount ));
+    const hashedVote = hashVote(
+      votingMachineAddress,
+      proposalId,
+      account,
+      decision,
+      repAmount
+    );
+    console.log('Hashed vote:', hashedVote);
+
+    const voteSignature = await this.context.providerStore.sign(
+      this.context.providerStore.getActiveWeb3React(),
+      addSignatureDomain ? toEthSignedMessageHash(hashedVote) : hashedVote
+    );
+
+    return voteSignature.result;
+  }
+
+  executeSignedVote(
+    votingMachineAddress: string,
+    proposalId: string,
+    voter: string,
+    decision: string,
+    amount: string,
+    signature: string
+  ): PromiEvent<any> {
+    const { providerStore } = this.context;
+    return providerStore.sendTransaction(
+      providerStore.getActiveWeb3React(),
+      ContractType.DXDVotingMachine,
+      votingMachineAddress,
+      'executeSignedVote',
+      [votingMachineAddress, proposalId, voter, decision, amount, signature],
       {}
     );
   }
@@ -205,7 +257,7 @@ export default class DaoService {
     return providerStore.sendTransaction(
       providerStore.getActiveWeb3React(),
       ContractType.ERC20,
-      daoStore.getCache().votingMachines[votingMachineAddress].token,
+      daoStore.daoCache.votingMachines[votingMachineAddress].token,
       'approve',
       [votingMachineAddress, MAX_UINT],
       {}
@@ -217,7 +269,7 @@ export default class DaoService {
     return providerStore.sendTransaction(
       providerStore.getActiveWeb3React(),
       ContractType.VotingMachine,
-      daoStore.getVotingMachineOfProposal(proposalId),
+      daoStore.getVotingMachineOfProposal(proposalId).address,
       'stake',
       [proposalId, decision, amount],
       {}
@@ -229,7 +281,7 @@ export default class DaoService {
     return providerStore.sendTransaction(
       providerStore.getActiveWeb3React(),
       ContractType.VotingMachine,
-      daoStore.getVotingMachineOfProposal(proposalId),
+      daoStore.getVotingMachineOfProposal(proposalId).address,
       'execute',
       [proposalId],
       {}
@@ -241,7 +293,7 @@ export default class DaoService {
     return providerStore.sendTransaction(
       providerStore.getActiveWeb3React(),
       ContractType.VotingMachine,
-      daoStore.getVotingMachineOfProposal(proposalId),
+      daoStore.getVotingMachineOfProposal(proposalId).address,
       'redeem',
       [proposalId, account],
       {}
@@ -253,7 +305,7 @@ export default class DaoService {
     return providerStore.sendTransaction(
       providerStore.getActiveWeb3React(),
       ContractType.VotingMachine,
-      daoStore.getVotingMachineOfProposal(proposalId),
+      daoStore.getVotingMachineOfProposal(proposalId).address,
       'redeemDaoBounty',
       [proposalId, account],
       {}

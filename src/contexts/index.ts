@@ -1,7 +1,6 @@
 import React from 'react';
 
 import ABIService from '../services/ABIService';
-import MulticallService from '../services/MulticallService';
 import DaoService from '../services/DaoService';
 import EventsService from '../services/EventsService';
 import IPFSService from '../services/IPFSService';
@@ -9,17 +8,23 @@ import PinataService from '../services/PinataService';
 import EtherscanService from '../services/EtherscanService';
 import CoingeckoService from '../services/CoingeckoService';
 import InfuraService from '../services/InfuraService';
+import PoktService from '../services/PoktService';
 import AlchemyService from '../services/AlchemyService';
 import CustomRpcService from '../services/CustomRpcService';
+import ENSService from '../services/ENSService';
+import TokenVestingService from '../services/TokenVestingService';
+import SubgraphService from '../services/SubgraphService';
+import MessageLoggerService from '../services/MessageLoggerService';
+import OrbitDBService from '../services/OrbitDBService';
 
 import ProviderStore from '../stores/Provider';
 import TransactionStore from '../stores/Transaction';
 import ModalStore from '../stores/Modal';
 import ConfigStore from '../stores/ConfigStore';
 import DaoStore from '../stores/DaoStore';
-import UserStore from '../stores/UserStore';
 import BlockchainStore from '../stores/BlockchainStore';
 import NotificationStore from '../stores/NotificationStore';
+import CacheService from 'services/CacheService';
 
 /*
 https://reactjs.org/docs/context.html#reactcreatecontext
@@ -40,12 +45,10 @@ export default class RootContext {
   modalStore: ModalStore;
   configStore: ConfigStore;
   daoStore: DaoStore;
-  userStore: UserStore;
   notificationStore: NotificationStore;
   blockchainStore: BlockchainStore;
 
   abiService: ABIService;
-  multicallService: MulticallService;
   daoService: DaoService;
   eventsService: EventsService;
   ipfsService: IPFSService;
@@ -53,8 +56,15 @@ export default class RootContext {
   etherscanService: EtherscanService;
   coingeckoService: CoingeckoService;
   infuraService: InfuraService;
+  poktService: PoktService;
   alchemyService: AlchemyService;
   customRpcService: CustomRpcService;
+  ensService: ENSService;
+  tokenVestingService: TokenVestingService;
+  subgraphService: SubgraphService;
+  messageLoggerService: MessageLoggerService;
+  orbitDBService: OrbitDBService;
+  cacheService: CacheService;
 
   constructor() {
     this.providerStore = new ProviderStore(this);
@@ -62,12 +72,10 @@ export default class RootContext {
     this.modalStore = new ModalStore(this);
     this.configStore = new ConfigStore(this);
     this.daoStore = new DaoStore(this);
-    this.userStore = new UserStore(this);
     this.notificationStore = new NotificationStore(this);
     this.blockchainStore = new BlockchainStore(this);
 
     this.abiService = new ABIService(this);
-    this.multicallService = new MulticallService(this);
     this.eventsService = new EventsService(this);
     this.daoService = new DaoService(this);
     this.ipfsService = new IPFSService(this);
@@ -75,8 +83,24 @@ export default class RootContext {
     this.etherscanService = new EtherscanService(this);
     this.coingeckoService = new CoingeckoService(this);
     this.infuraService = new InfuraService(this);
+    this.poktService = new PoktService(this);
     this.alchemyService = new AlchemyService(this);
     this.customRpcService = new CustomRpcService(this);
+    this.ensService = new ENSService(this);
+    this.tokenVestingService = new TokenVestingService(this);
+    this.subgraphService = new SubgraphService(this);
+    this.messageLoggerService = new MessageLoggerService(this);
+    this.orbitDBService = new OrbitDBService(this);
+    this.cacheService = new CacheService(this);
+  }
+
+  reset() {
+    this.configStore.reset();
+    this.notificationStore.reset();
+    this.transactionStore.reset();
+    this.modalStore.reset();
+    this.blockchainStore.reset();
+    this.daoStore.reset();
   }
 }
 

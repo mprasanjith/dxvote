@@ -1,15 +1,23 @@
 import { observer } from 'mobx-react';
 import { useHistory } from 'react-router-dom';
-import { useContext } from '../contexts';
 import { useLocation } from 'react-router-dom';
+import moment from 'moment';
 import {
   BlockchainLink,
   Row,
   Box,
   InfoBox,
   Subtitle,
+  Button,
 } from '../components/common';
 import { formatBalance } from '../utils';
+import { useContext } from '../contexts';
+import useExporters from '../hooks/useExporters';
+import {
+  TitleRow,
+  ListRow,
+  VestingContractsSection,
+} from 'components/UserPage';
 
 const UserPage = observer(() => {
   let history = useHistory();
@@ -18,10 +26,27 @@ const UserPage = observer(() => {
     context: { daoStore, configStore },
   } = useContext();
   const userAddress = useLocation().pathname.split('/')[3];
+  const { exportToCSV, triggerDownload } = useExporters();
   const userEvents = daoStore.getUserEvents(userAddress);
   const userInfo = daoStore.getUser(userAddress);
   const networkName = configStore.getActiveChainName();
   const redeemsLeft = daoStore.getUserRedeemsLeft(userAddress);
+
+  const getExportFileName = () => {
+    return `history_${userAddress}-${moment().format('YYYY-MM-DD')}`;
+  };
+
+  const exportCSV = async () => {
+    const historyItems = userEvents.history.map(historyEvent => ({
+      tx: historyEvent.event.tx,
+      eventTime: moment.unix(historyEvent.event.timestamp).format(),
+      eventTimeTs: historyEvent.event.timestamp,
+      blockNumber: historyEvent.event.block,
+      action: historyEvent.text,
+    }));
+    const csvString = await exportToCSV(historyItems);
+    triggerDownload(csvString, `${getExportFileName()}.csv`, 'text/csv');
+  };
 
   return (
     <Box>
@@ -77,7 +102,7 @@ const UserPage = observer(() => {
           </span>
         );
       })}
-      {redeemsLeft.bounty.map((proposalId, i) => {
+      {Object.keys(redeemsLeft.bounty).map((proposalId, i) => {
         return (
           <span
             key={'proposalLink' + i}
@@ -89,23 +114,22 @@ const UserPage = observer(() => {
               cursor: 'pointer',
             }}
           >
-            Staking token bounty redeem in Proposal {proposalId}
+            Staking token bounty redeem of{' '}
+            {redeemsLeft.bounty[proposalId].toString()} in Proposal {proposalId}
           </span>
         );
       })}
 
-      <h2> History </h2>
+      <TitleRow>
+        <h2>History</h2>
+        <Button onClick={exportCSV}>Export to CSV</Button>
+      </TitleRow>
+
       {userEvents.history.map((historyEvent, i) => {
         return (
-          <div
+          <ListRow
             key={'userHistoryEvent' + i}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '6px 0px',
-              borderBottom:
-                i < userEvents.history.length - 1 ? '1px solid' : '',
-            }}
+            borderBottom={i < userEvents.history.length - 1}
           >
             <span> {historyEvent.text} </span>
             <BlockchainLink
@@ -114,9 +138,10 @@ const UserPage = observer(() => {
               text={historyEvent.event.tx}
               onlyIcon
             />
-          </div>
+          </ListRow>
         );
       })}
+      <VestingContractsSection userAddress={userAddress} />
     </Box>
   );
 });

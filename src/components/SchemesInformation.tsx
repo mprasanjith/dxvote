@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { observer } from 'mobx-react';
-import { bnum } from '../utils';
+import { bnum, encodePermission, isWalletScheme, ZERO_ADDRESS } from '../utils';
 import moment from 'moment';
 import { useContext } from '../contexts';
 import {
@@ -44,20 +44,29 @@ const SchemesInformation = observer(() => {
       </TableHeader>
       <TableBody>
         {schemes.map(scheme => {
-          const schemeProposals = daoStore.getSchemeProposals(scheme.address);
-          const votingMachineParameters = daoStore.getVotingParametersOfScheme(
+          const schemeProposals = daoStore.getAllProposals({
+            scheme: scheme.address,
+          });
+          const votingMachineParameters = daoStore.getVotingMachineOfScheme(
             scheme.address
-          );
+          ).params;
           if (votingMachineParameters)
             return (
               <TableRow>
                 <DataCell>
                   {scheme.name}
                   <br />
+                  <small>{scheme.type}</small>
+                  <br />
                   <BlockchainLink size="short" text={scheme.address} toCopy />
                 </DataCell>
                 <DataCell>
                   <small>Params Hash: {scheme.paramsHash}</small>
+                  <br />
+                  <small>
+                    Do Avatar Generic Calls:{' '}
+                    {scheme.controllerAddress !== ZERO_ADDRESS ? 'YES' : 'NO'}
+                  </small>
                   <br />
                   <small>
                     Queued Proposal Period:{' '}
@@ -99,7 +108,7 @@ const SchemesInformation = observer(() => {
                       .humanize()}
                   </small>
                   <br />
-                  {scheme.type === 'WalletScheme' ? (
+                  {isWalletScheme(scheme) ? (
                     <small>
                       Max time for execution:{' '}
                       {moment
@@ -113,7 +122,7 @@ const SchemesInformation = observer(() => {
                   ) : (
                     <div />
                   )}
-                  {scheme.type === 'WalletScheme' ? (
+                  {isWalletScheme(scheme) ? (
                     <small>
                       Max REP % to change in proposal:{' '}
                       {scheme.maxRepPercentageChange.toString()} %<br />
@@ -121,7 +130,7 @@ const SchemesInformation = observer(() => {
                   ) : (
                     <div />
                   )}
-                  {scheme.type === 'WalletScheme' ? (
+                  {isWalletScheme(scheme) ? (
                     <small>
                       Required Percentage for boosted approval:{' '}
                       {bnum(scheme.boostedVoteRequiredPercentage)
@@ -177,6 +186,8 @@ const SchemesInformation = observer(() => {
                 </DataCell>
                 <DataCell>
                   <strong>Controller Permissions</strong>
+                  <br />
+                  <small>Raw: {encodePermission(scheme.permissions)}</small>
                   <br />
                   <small>
                     {scheme.permissions.canGenericCall ? 'Can' : 'Cant'} make

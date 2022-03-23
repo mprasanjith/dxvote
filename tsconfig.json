@@ -23,21 +23,18 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "declaration": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "allowUnreachableCode": false,
     "isolatedModules": true,
     "useDefineForClassFields": true,
     "noFallthroughCasesInSwitch": true,
     "useUnknownInCatchVariables": false,
-    "noUnusedLocals": true,
-    "typeRoots": [
-      "./src/types"
-    ]
+    "noUnusedLocals": true
   },
   "include": [
     "src",
-    "scritps"
+    "scripts"
   ],
   "exclude": [
     "node_modules",

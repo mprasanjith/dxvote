@@ -1,12 +1,8 @@
-import contentHash from 'content-hash';
 import _ from 'lodash';
-import { ZERO_ADDRESS } from './index';
+import { MAX_BLOCKS_PER_EVENTS_FETCH } from './constants';
+import { sleep } from './helpers';
 
 const Web3 = require('web3');
-const web3 = new Web3();
-
-const MAX_BLOCKS_PER_EVENTS_FETCH: number =
-  Number(process.env.MAX_BLOCKS_PER_EVENTS_FETCH) || 1000000;
 
 export const getEvents = async function (
   web3,
@@ -16,6 +12,8 @@ export const getEvents = async function (
   eventsToGet,
   maxBlocksPerFetch = MAX_BLOCKS_PER_EVENTS_FETCH
 ) {
+  if (web3._provider.host && web3._provider.host.indexOf('arbitrum.io/rpc') > 0)
+    maxBlocksPerFetch = 99000;
   let events = [],
     to = Math.min(fromBlock + maxBlocksPerFetch, toBlock),
     from = fromBlock;
@@ -33,9 +31,25 @@ export const getEvents = async function (
       from = to;
       to = Math.min(from + maxBlocksPerFetch, toBlock);
     } catch (error) {
-      console.error('Error fetching blocks:', (error as Error).message);
-      if (Math.trunc((to - from) / 2) > 100000) {
-        const blocksToLower = Math.max(Math.trunc((to - from) / 2), 100000);
+      if ((error as Error).message.indexOf('Relay attempts exhausted') > -1) {
+        const blocksToLower = Math.max(Math.trunc((to - from) / 2), 10000);
+        console.debug('Lowering toBlock', blocksToLower, 'blocks');
+        to = to - blocksToLower;
+        await sleep(5000);
+      } else if (
+        (error as Error).message.indexOf(
+          'You cannot query logs for more than 100000 blocks at once.'
+        ) > -1
+      ) {
+        maxBlocksPerFetch = 100000;
+        to = from + 100000;
+        console.debug('Lowering toBlock to', to);
+      } else if (
+        (error as Error).message.indexOf('Relay attempts exhausted') === -1 &&
+        Math.trunc((to - from) / 2) > 10000
+      ) {
+        console.error('Error fetching blocks:', (error as Error).message);
+        const blocksToLower = Math.max(Math.trunc((to - from) / 2), 10000);
         console.debug('Lowering toBlock', blocksToLower, 'blocks');
         to = to - blocksToLower;
       }
@@ -52,6 +66,8 @@ export const getRawEvents = async function (
   topicsToGet,
   maxBlocksPerFetch = MAX_BLOCKS_PER_EVENTS_FETCH
 ) {
+  if (web3._provider.host && web3._provider.host.indexOf('arbitrum.io/rpc') > 0)
+    maxBlocksPerFetch = 99000;
   let events = [],
     to = Math.min(fromBlock + maxBlocksPerFetch, toBlock),
     from = fromBlock;
@@ -71,9 +87,21 @@ export const getRawEvents = async function (
       from = to;
       to = Math.min(from + maxBlocksPerFetch, toBlock);
     } catch (error) {
-      console.error('Error fetching blocks:', (error as Error).message);
-      if (Math.trunc((to - from) / 2) > 100000) {
-        const blocksToLower = Math.max(Math.trunc((to - from) / 2), 100000);
+      if (
+        (error as Error).message.indexOf(
+          'You cannot query logs for more than 100000 blocks at once.'
+        ) > -1
+      ) {
+        const blocksToLower = Math.max(Math.trunc((to - from) / 2), 10000);
+        console.debug('Lowering toBlock', blocksToLower, 'blocks');
+        to = to - blocksToLower;
+        await sleep(5000);
+      } else if (
+        (error as Error).message.indexOf('Relay attempts exhausted') === -1 &&
+        Math.trunc((to - from) / 2) > 10000
+      ) {
+        console.error('Error fetching blocks:', (error as Error).message);
+        const blocksToLower = Math.max(Math.trunc((to - from) / 2), 10000);
         console.debug('Lowering toBlock', blocksToLower, 'blocks');
         to = to - blocksToLower;
       }
@@ -83,8 +111,7 @@ export const getRawEvents = async function (
 };
 
 export const getTimestampOfEvents = async function (web3, events) {
-  //// TODO:  See how can we bacth requests can be implemented
-
+  //// TODO:  See how can we batch requests can be implemented
   // async function batchRequest(blocks) {
   //   const batch = new web3.BatchRequest();
   //   let requests = [];
@@ -122,29 +149,22 @@ export const getTimestampOfEvents = async function (web3, events) {
         for (let i = 0; i < events.length; i++) {
           if (events[i].blockNumber === blockInfo.number)
             events[i].timestamp = blockInfo.timestamp;
-          if (blockInfo.l1BlockNumber)
-            events[i].l1BlockNumber = Number(blockInfo.l1BlockNumber);
+          if (blockInfo.l2BlockNumber)
+            events[i].blockNumber = Number(blockInfo.l2BlockNumber);
         }
       })
     );
-  }
-
-  for (let i = 0; i < events.length; i++) {
-    if (events[i].l1BlockNumber) {
-      events[i].l2BlockNumber = events[i].blockNumber;
-    } else {
-      events[i].l1BlockNumber = events[i].blockNumber;
-      events[i].l2BlockNumber = 0;
-    }
   }
   return events;
 };
 
 export const sortEvents = function (events) {
-  return _.orderBy(
-    events,
-    ['l1BlockNumber', 'l2BlockNumber', 'transactionIndex', 'logIndex'],
-    ['asc', 'asc', 'asc', 'asc']
+  return _.uniq(
+    _.orderBy(
+      events,
+      ['blockNumber', 'transactionIndex', 'logIndex'],
+      ['asc', 'asc', 'asc', 'asc']
+    )
   );
 };
 
@@ -189,150 +209,47 @@ export const isNode = function () {
   return typeof module !== 'undefined' && module.exports;
 };
 
-export const descriptionHashToIPFSHash = function (descriptionHash) {
-  try {
-    if (contentHash.getCodec(descriptionHash) === 'ipfs-ns')
-      return contentHash.decode(descriptionHash);
-    else if (
-      descriptionHash.length > 1 &&
-      descriptionHash.substring(0, 2) !== 'Qm'
-    )
-      return descriptionHash;
-    else return '';
-  } catch (error) {
-    console.error('Error decoding descriptionHash', descriptionHash);
-    return '';
-  }
+export const getSchemeConfig = function (networkContracts, schemeAddress) {
+  if (networkContracts.daostack && networkContracts.daostack[schemeAddress])
+    return {
+      type: networkContracts.daostack[schemeAddress].type,
+      name: networkContracts.daostack[schemeAddress].name,
+      contractToCall: networkContracts.daostack[schemeAddress].contractToCall,
+      newProposalTopics:
+        networkContracts.daostack[schemeAddress].newProposalTopics,
+      creationLogEncoding:
+        networkContracts.daostack[schemeAddress].creationLogEncoding,
+      votingMachine: networkContracts.daostack[schemeAddress].votingMachine,
+      voteParams: networkContracts.daostack[schemeAddress].voteParams,
+    };
+  else
+    return {
+      type: 'WalletScheme',
+      name: 'WalletScheme',
+      contractToCall: schemeAddress,
+      newProposalTopics: [
+        [
+          Web3.utils.soliditySha3('ProposalStateChange(bytes32,uint256)'),
+          null,
+          '0x0000000000000000000000000000000000000000000000000000000000000001',
+        ],
+      ],
+      creationLogEncoding: [],
+    };
 };
 
-export const ipfsHashToDescriptionHash = function (ipfsHash) {
-  try {
-    if (ipfsHash.length > 1 && ipfsHash.substring(0, 2) === 'Qm')
-      return contentHash.fromIpfs(ipfsHash);
-    else if (contentHash.getCodec(ipfsHash) === 'ipfs-ns') return ipfsHash;
-    else return '';
-  } catch (error) {
-    console.error('Error encoding ipfsHash', ipfsHash);
-    return '';
-  }
-};
-
-export const getSchemeTypeData = function (networkConfig, schemeAddress) {
-  if (networkConfig.daostack) {
-    if (
-      networkConfig.daostack.schemeRegistrar &&
-      networkConfig.daostack.schemeRegistrar.address === schemeAddress
-    ) {
-      return {
-        type: 'SchemeRegistrar',
-        name: 'SchemeRegistrar',
-        contractToCall: networkConfig.daostack.schemeRegistrar.contractToCall,
-        votingMachine: networkConfig.votingMachines.gen.address,
-        newProposalTopics:
-          networkConfig.daostack.schemeRegistrar.newProposalTopics,
-        voteParams: networkConfig.daostack.contributionReward.voteParams,
-        creationLogEncoding:
-          networkConfig.daostack.schemeRegistrar.creationLogEncoding,
-      };
-    } else if (
-      networkConfig.daostack.contributionReward &&
-      networkConfig.daostack.contributionReward.address === schemeAddress
-    ) {
-      return {
-        type: 'ContributionReward',
-        name: 'ContributionReward',
-        contractToCall:
-          networkConfig.daostack.contributionReward.contractToCall,
-        votingMachine: networkConfig.votingMachines.gen.address,
-        newProposalTopics:
-          networkConfig.daostack.contributionReward.newProposalTopics,
-        voteParams: networkConfig.daostack.contributionReward.voteParams,
-        creationLogEncoding:
-          networkConfig.daostack.contributionReward.creationLogEncoding,
-      };
-    } else if (
-      networkConfig.daostack.competitionScheme &&
-      networkConfig.daostack.competitionScheme.address === schemeAddress
-    ) {
-      return {
-        type: 'CompetitionScheme',
-        name: 'CompetitionScheme',
-        contractToCall: networkConfig.daostack.competitionScheme.contractToCall,
-        votingMachine: networkConfig.votingMachines.gen.address,
-        newProposalTopics:
-          networkConfig.daostack.competitionScheme.newProposalTopics,
-        creationLogEncoding:
-          networkConfig.daostack.competitionScheme.creationLogEncoding,
-      };
-    } else if (
-      networkConfig.daostack.multicallSchemes &&
-      Object.keys(networkConfig.daostack.multicallSchemes.addresses).indexOf(
-        schemeAddress
-      ) > -1
-    ) {
-      return {
-        type: 'GenericMulticall',
-        votingMachine: networkConfig.votingMachines.gen.address,
-        contractToCall: ZERO_ADDRESS,
-        name: networkConfig.daostack.multicallSchemes.addresses[schemeAddress]
-          .name,
-        newProposalTopics:
-          networkConfig.daostack.multicallSchemes.newProposalTopics,
-        voteParams:
-          networkConfig.daostack.multicallSchemes.addresses[schemeAddress]
-            .voteParams,
-        creationLogEncoding:
-          networkConfig.daostack.multicallSchemes.creationLogEncoding,
-      };
-    } else if (
-      networkConfig.daostack.genericSchemes &&
-      Object.keys(networkConfig.daostack.genericSchemes.addresses).indexOf(
-        schemeAddress
-      ) > -1
-    ) {
-      return {
-        type: 'GenericScheme',
-        votingMachine:
-          networkConfig.daostack.genericSchemes.addresses[schemeAddress]
-            .votingMachine,
-        contractToCall:
-          networkConfig.daostack.genericSchemes.addresses[schemeAddress]
-            .contractToCall,
-        name: networkConfig.daostack.genericSchemes.addresses[schemeAddress]
-          .name,
-        newProposalTopics:
-          networkConfig.daostack.genericSchemes.newProposalTopics,
-        voteParams:
-          networkConfig.daostack.genericSchemes.addresses[schemeAddress]
-            .voteParams,
-        creationLogEncoding:
-          networkConfig.daostack.genericSchemes.creationLogEncoding,
-      };
-    } else if (
-      networkConfig.daostack.dxSchemes &&
-      Object.keys(networkConfig.daostack.dxSchemes).indexOf(schemeAddress) > -1
-    ) {
-      return {
-        type: 'OldDxScheme',
-        votingMachine: networkConfig.votingMachines.gen.address,
-        contractToCall: ZERO_ADDRESS,
-        name: networkConfig.daostack.dxSchemes[schemeAddress],
-        newProposalTopics: [],
-        creationLogEncoding: [],
-      };
+export async function tryCacheUpdates(promises, networkCache) {
+  let retry = true;
+  while (retry) {
+    try {
+      (await Promise.all(promises)).map(networkCacheUpdated => {
+        networkCache = Object.assign(networkCache, networkCacheUpdated);
+      });
+    } catch (e) {
+      console.error('[CACHE UPDATE] (trying again)', e.message);
+    } finally {
+      retry = false;
     }
   }
-  return {
-    type: 'WalletScheme',
-    votingMachine: networkConfig.votingMachines.dxd.address,
-    name: 'WalletScheme',
-    newProposalTopics: [
-      [
-        web3.utils.soliditySha3('ProposalStateChange(bytes32,uint256)'),
-        null,
-        '0x0000000000000000000000000000000000000000000000000000000000000001',
-      ],
-    ],
-    creationLogEncoding: [],
-  };
-};
+  return networkCache;
+}
