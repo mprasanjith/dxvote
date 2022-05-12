@@ -1,13 +1,13 @@
-import { utils } from 'ethers';
-import { RegistryContract, useContractRegistry } from './useContractRegistry';
 import ERC20ABI from '../../../abis/ERC20.json';
+import { RegistryContract, useContractRegistry } from './useContractRegistry';
 import { useWeb3React } from '@web3-react/core';
+import { utils } from 'ethers';
 import {
   Call,
   DecodedCall,
   Option,
   SupportedAction,
-} from 'components/Guilds/ActionsBuilder/types';
+} from 'old-components/Guilds/ActionsBuilder/types';
 
 const ERC20_TRANSFER_SIGNATURE = '0xa9059cbb';
 const ERC20_APPROVE_SIGNATURE = '0x095ea7b3';
@@ -60,19 +60,10 @@ const decodeCallUsingEthersInterface = (
 const getContractInterfaceFromRegistryContract = (
   registryContract: RegistryContract
 ) => {
-  // Construct the interface for the contract.
-  const contractInterface = new utils.Interface(
-    registryContract.functions.map(f => {
-      const name = f.functionName;
-      const params = f.params.reduce(
-        (acc, cur) => acc.concat(`${cur.type} ${cur.name}`),
-        ''
-      );
-      return `function ${name}(${params})`;
-    })
-  );
-
-  return { contractInterface, callType: SupportedAction.GENERIC_CALL };
+  return {
+    contractInterface: registryContract.contractInterface,
+    callType: SupportedAction.GENERIC_CALL,
+  };
 };
 
 const getContractFromKnownSighashes = (data: string) => {
@@ -117,6 +108,7 @@ const decodeCall = (
   );
 
   return {
+    id: `action-${Math.random()}`,
     decodedCall,
     contract: contractInterface,
   };
@@ -143,5 +135,6 @@ export const useDecodedCall = (call: Call) => {
   const { chainId } = useWeb3React();
   const { contracts } = useContractRegistry();
 
-  return decodeCall(call, contracts, chainId);
+  const decodedData = call ? decodeCall(call, contracts, chainId) : null;
+  return decodedData || { decodedCall: null, contract: null };
 };

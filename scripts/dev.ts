@@ -13,19 +13,23 @@ async function main() {
   const web3 = hre.web3;
   const PermissionRegistry = await hre.artifacts.require('PermissionRegistry');
   const ERC20Guild = await hre.artifacts.require('ERC20Guild');
+  const EnforcedBinaryGuild = await hre.artifacts.require(
+    'EnforcedBinaryGuild'
+  );
+  const accounts = await web3.eth.getAccounts();
 
   const deployconfig = {
     reputation: [
       {
-        address: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        address: accounts[0],
         amount: 6000,
       },
       {
-        address: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
+        address: accounts[1],
         amount: 4000,
       },
       {
-        address: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        address: accounts[2],
         amount: 1000,
       },
     ],
@@ -34,17 +38,18 @@ async function main() {
       {
         name: 'DXDao on localhost',
         symbol: 'DXD',
+        type: 'ERC20',
         distribution: [
           {
-            address: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
-            amount: web3.utils.toWei('220'),
+            address: accounts[0],
+            amount: web3.utils.toWei('320'),
           },
           {
-            address: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
+            address: accounts[1],
             amount: web3.utils.toWei('50'),
           },
           {
-            address: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+            address: accounts[2],
             amount: web3.utils.toWei('10'),
           },
         ],
@@ -52,36 +57,38 @@ async function main() {
       {
         name: 'REPGuildToken',
         symbol: 'RGT',
+        type: 'ERC20SnapshotRep',
         distribution: [
           {
-            address: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
-            amount: 1000,
+            address: accounts[0],
+            amount: web3.utils.toWei('200'),
           },
           {
-            address: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
-            amount: 4000,
+            address: accounts[1],
+            amount: web3.utils.toWei('50'),
           },
           {
-            address: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
-            amount: 10000,
+            address: accounts[2],
+            amount: web3.utils.toWei('10'),
           },
         ],
       },
       {
-        name: 'Snapshot Guild Token',
-        symbol: 'SGT',
+        name: 'SWAPR Token',
+        symbol: 'SWPR',
+        type: 'ERC20',
         distribution: [
           {
-            address: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
-            amount: 1000,
+            address: accounts[0],
+            amount: web3.utils.toWei('200'),
           },
           {
-            address: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
-            amount: 4000,
+            address: accounts[1],
+            amount: web3.utils.toWei('40'),
           },
           {
-            address: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
-            amount: 10000,
+            address: accounts[2],
+            amount: web3.utils.toWei('100'),
           },
         ],
       },
@@ -246,16 +253,16 @@ async function main() {
         lockTime: moment.duration(5, 'minutes').asSeconds(),
       },
       {
-        token: 'SGT',
-        contractName: 'SnapshotERC20Guild',
-        name: 'SnapshotGuild',
-        proposalTime: moment.duration(5, 'minutes').asSeconds(),
+        token: 'SWPR',
+        contractName: 'EnforcedBinaryGuild',
+        name: 'SwaprGuild',
+        proposalTime: moment.duration(3, 'minutes').asSeconds(),
         timeForExecution: moment.duration(2, 'minutes').asSeconds(),
-        votingPowerForProposalExecution: '50',
+        votingPowerForProposalExecution: '30',
         votingPowerForProposalCreation: '5',
         voteGas: '0',
         maxGasPrice: '0',
-        maxActiveProposals: '5',
+        maxActiveProposals: '999',
         lockTime: moment.duration(5, 'minutes').asSeconds(),
       },
     ],
@@ -265,7 +272,7 @@ async function main() {
     actions: [
       {
         type: 'transfer',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           asset: ZERO_ADDRESS,
           address: 'Avatar',
@@ -274,7 +281,7 @@ async function main() {
       },
       {
         type: 'transfer',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           asset: 'DXD',
           address: 'Avatar',
@@ -284,7 +291,7 @@ async function main() {
 
       {
         type: 'transfer',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           asset: ZERO_ADDRESS,
           address: 'DXDGuild',
@@ -293,7 +300,7 @@ async function main() {
       },
       {
         type: 'transfer',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           asset: 'DXD',
           address: 'DXDGuild',
@@ -303,7 +310,26 @@ async function main() {
 
       {
         type: 'transfer',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[1],
+        data: {
+          asset: ZERO_ADDRESS,
+          address: 'SwaprGuild',
+          amount: web3.utils.toWei('10'),
+        },
+      },
+      {
+        type: 'transfer',
+        from: accounts[1],
+        data: {
+          asset: 'SWPR',
+          address: 'SwaprGuild',
+          amount: web3.utils.toWei('10'),
+        },
+      },
+
+      {
+        type: 'transfer',
+        from: accounts[0],
         data: {
           asset: ZERO_ADDRESS,
           address: 'REPGuild',
@@ -313,12 +339,12 @@ async function main() {
 
       {
         type: 'proposal',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           to: ['PermissionRegistry'],
           callData: [
             new web3.eth.Contract(PermissionRegistry.abi).methods
-              .setAdminPermission(
+              .setPermission(
                 ZERO_ADDRESS,
                 '0xE0FC07f3aC4F6AF1463De20eb60Cf1A764E259db',
                 '0x1A0370A6f5b6cE96B1386B208a8519552eb714D9',
@@ -337,7 +363,7 @@ async function main() {
       },
       {
         type: 'stake',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           proposal: '0',
           decision: '1',
@@ -347,7 +373,7 @@ async function main() {
       {
         type: 'vote',
         time: moment.duration(1, 'minutes').asSeconds(),
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           proposal: '0',
           decision: '1',
@@ -357,14 +383,14 @@ async function main() {
       {
         type: 'execute',
         time: moment.duration(3, 'minutes').asSeconds(),
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           proposal: '0',
         },
       },
       {
         type: 'redeem',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           proposal: '0',
         },
@@ -372,7 +398,7 @@ async function main() {
 
       {
         type: 'proposal',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           to: ['QuickWalletScheme'],
           callData: ['0x0'],
@@ -385,7 +411,7 @@ async function main() {
       },
       {
         type: 'stake',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           proposal: '1',
           decision: '1',
@@ -395,7 +421,7 @@ async function main() {
       {
         type: 'vote',
         time: moment.duration(1, 'minutes').asSeconds(),
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
           proposal: '1',
           decision: '1',
@@ -404,7 +430,7 @@ async function main() {
       },
       {
         type: 'vote',
-        from: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
+        from: accounts[1],
         data: {
           proposal: '1',
           decision: '2',
@@ -414,9 +440,9 @@ async function main() {
 
       {
         type: 'proposal',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        from: accounts[2],
         data: {
-          to: ['0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351'],
+          to: [accounts[2]],
           callData: ['0x0'],
           value: [web3.utils.toWei('1.5')],
           title: 'Proposal Test #2',
@@ -429,7 +455,7 @@ async function main() {
 
       {
         type: 'approve',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           asset: 'DXD',
           address: 'DXDGuild-vault',
@@ -438,7 +464,7 @@ async function main() {
       },
       {
         type: 'guild-lockTokens',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           guildName: 'DXDGuild',
           amount: web3.utils.toWei('100'),
@@ -446,7 +472,7 @@ async function main() {
       },
       {
         type: 'guild-withdrawTokens',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           guildName: 'DXDGuild',
           amount: web3.utils.toWei('10'),
@@ -455,7 +481,7 @@ async function main() {
       },
       {
         type: 'guild-createProposal',
-        from: '0x79706c8e413cdaee9e63f282507287b9ea9c0928',
+        from: accounts[0],
         data: {
           guildName: 'DXDGuild',
           to: ['DXDGuild'],
@@ -479,7 +505,7 @@ async function main() {
       },
       {
         type: 'guild-voteProposal',
-        from: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
+        from: accounts[1],
         data: {
           guildName: 'DXDGuild',
           proposal: 0,
@@ -490,7 +516,7 @@ async function main() {
       {
         time: moment.duration(10, 'minutes').asSeconds(),
         type: 'guild-endProposal',
-        from: '0xc73480525e9d1198d448ece4a01daea851f72a9d',
+        from: accounts[1],
         data: {
           guildName: 'DXDGuild',
           proposal: 0,
@@ -498,10 +524,55 @@ async function main() {
       },
 
       {
-        type: 'proposal',
-        from: '0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351',
+        type: 'approve',
+        from: accounts[2],
         data: {
-          to: ['0x3f943f38b2fbe1ee5daf0516cecfe4e0f8734351'],
+          asset: 'SWPR',
+          address: 'SwaprGuild-vault',
+          amount: web3.utils.toWei('2'),
+        },
+      },
+
+      {
+        type: 'guild-lockTokens',
+        from: accounts[2],
+        data: {
+          guildName: 'SwaprGuild',
+          amount: web3.utils.toWei('1'),
+        },
+      },
+
+      {
+        type: 'guild-createProposal',
+        from: accounts[2],
+        data: {
+          guildName: 'SwaprGuild',
+          to: ['SwaprGuild'],
+          callData: [
+            new web3.eth.Contract(EnforcedBinaryGuild.abi).methods
+              .setPermission(
+                [ZERO_ADDRESS],
+                [ANY_ADDRESS],
+                [ANY_FUNC_SIGNATURE],
+                [web3.utils.toWei('5').toString()],
+                [true]
+              )
+              .encodeABI(),
+          ],
+          value: ['0'],
+          totalActions: '1',
+          title: 'Proposal Test #1 to SwaprGuild',
+          description:
+            'Allow call any address and function and send a max of 5 ETH per proposal',
+          voteOptions: ['Test Option'],
+        },
+      },
+
+      {
+        type: 'proposal',
+        from: accounts[2],
+        data: {
+          to: [accounts[2]],
           callData: ['0x0'],
           value: [web3.utils.toWei('1.5')],
           title: 'Proposal Test #3',
@@ -581,14 +652,32 @@ async function main() {
         logoURI:
           'https://s2.coinmarketcap.com/static/img/coins/200x200/5589.png',
       },
+      {
+        address: addresses.RGT,
+        name: 'REP Guild Token on Localhost',
+        decimals: 18,
+        symbol: 'RGT',
+        fetchPrice: true,
+        logoURI:
+          'https://s2.coinmarketcap.com/static/img/coins/200x200/5589.png',
+      },
+      {
+        address: addresses.SWPR,
+        name: 'SWAPR Guild',
+        decimals: 18,
+        symbol: 'SWPR',
+        fetchPrice: true,
+        logoURI:
+          'https://s2.coinmarketcap.com/static/img/coins/200x200/5589.png',
+      },
     ],
-    guilds: [addresses.DXDGuild, addresses.REPGuild, addresses.SnapshotGuild],
+    guilds: [addresses.DXDGuild, addresses.REPGuild, addresses.SwaprGuild],
   };
 
   mkdirSync(path.resolve(__dirname, '../src/configs/localhost'), {
     recursive: true,
   });
-  await writeFileSync(
+  writeFileSync(
     path.resolve(__dirname, '../src/configs/localhost/config.json'),
     JSON.stringify(developConfig, null, 2)
   );
