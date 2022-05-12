@@ -24,7 +24,7 @@ jobs:
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: preview-build.yml
+          workflow: storybook-build.yml
           workflow_conclusion: success
           name: storybook-${{ steps.source-run-info.outputs.targetCommitSha }}
           path: 'storybook-static'
@@ -44,4 +44,4 @@ jobs:
           body: |
             ✔️ Storybook deployment is ready!
 
-            😎 Browse Storybook: https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link
+            😎 Browse Storybook: https://${{ steps.web3.outputs.cid }}.ipfs.cf-ipfs.com
