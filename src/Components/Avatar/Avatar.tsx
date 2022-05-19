@@ -1,6 +1,6 @@
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import styled from 'styled-components';
-import { ButtonIcon } from '../common/Button';
+import { ButtonIcon } from '../../old-components/Guilds/common/Button';
 
 interface AvatarProps {
   src?: string;
