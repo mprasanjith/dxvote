@@ -1,6 +1,6 @@
 import { ReactComponent as Mint } from '../../../assets/images/mint.svg';
 import { ReactComponent as Vector } from '../../../assets/images/vector.svg';
-import { SupportedAction } from '../ActionsBuilder/types';
+import { SupportedAction } from '../../../Components/ActionsBuilder/types';
 import StyledIcon from '../common/SVG';
 import {
   ActionsButton,

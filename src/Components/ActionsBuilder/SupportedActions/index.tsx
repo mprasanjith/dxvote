@@ -6,8 +6,8 @@ import {
   SupportedAction,
   ApproveSendTokens,
 } from '../types';
-import ERC20ABI from '../../../../abis/ERC20.json';
-import ERC20SnapshotRep from '../../../../contracts/ERC20SnapshotRep.json';
+import ERC20ABI from '../../../abis/ERC20.json';
+import ERC20SnapshotRep from '../../../contracts/ERC20SnapshotRep.json';
 import ERC20TransferEditor from './ERC20Transfer/ERC20TransferEditor';
 import ERC20TransferInfoLine from './ERC20Transfer/ERC20TransferInfoLine';
 import ERC20TransferSummary from './ERC20Transfer/ERC20TransferSummary';

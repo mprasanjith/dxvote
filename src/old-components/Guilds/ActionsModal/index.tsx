@@ -2,12 +2,12 @@ import {
   defaultValues,
   getEditor,
   supportedActions,
-} from '../ActionsBuilder/SupportedActions';
+} from '../../../Components/ActionsBuilder/SupportedActions';
 import {
   DecodedAction,
   DecodedCall,
   SupportedAction,
-} from '../ActionsBuilder/types';
+} from '../../../Components/ActionsBuilder/types';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import ContractActionsList from './ContractActionsList';
