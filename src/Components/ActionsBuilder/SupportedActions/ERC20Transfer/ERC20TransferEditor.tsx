@@ -49,7 +49,10 @@ interface TransferState {
   destination: string;
 }
 
-const Transfer: React.FC<ActionEditorProps> = ({ decodedCall, updateCall }) => {
+const ERC20TransferEditor: React.FC<ActionEditorProps> = ({
+  decodedCall,
+  updateCall,
+}) => {
   const [isTokenPickerOpen, setIsTokenPickerOpen] = useState(false);
 
   const { chainId } = useWeb3React();
@@ -196,4 +199,4 @@ const Transfer: React.FC<ActionEditorProps> = ({ decodedCall, updateCall }) => {
   );
 };
 
-export default Transfer;
+export default ERC20TransferEditor;
