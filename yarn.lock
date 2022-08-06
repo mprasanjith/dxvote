@@ -18252,10 +18252,10 @@ ipfs-only-hash@^4.0.0:
     ipfs-unixfs-importer "^7.0.1"
     meow "^9.0.0"
 
-ipfs-pubsub-1on1@~0.0.6:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/ipfs-pubsub-1on1/-/ipfs-pubsub-1on1-0.0.7.tgz#8c93c094c01b29012aab14694cfde0f525db955c"
-  integrity sha512-j+3XefZ3xF7LlUo0cBm71aBEhVIvpwqNrtxhitkSWMkMwHUB6PfV8VSJuqUJ5lKg0t/Jo4IMDO5fdDInpUkU/Q==
+ipfs-pubsub-1on1@0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/ipfs-pubsub-1on1/-/ipfs-pubsub-1on1-0.0.8.tgz#931809008b61218e7a882ec2e5666c04841b2055"
+  integrity sha512-f5pBfjkWSExrG1i63dZo7e1d0E+wN+WlHPQmU+7QP51q2zn2ycQReDbdPXP3JEi36/vqF6KAPB5SIFKyO0KgMA==
   dependencies:
     safe-buffer "~5.2.1"
 
@@ -23743,10 +23743,10 @@ orbit-db-storage-adapter@~0.5.3:
     level "^5.0.1"
     mkdirp "^0.5.1"
 
-orbit-db-store@^4.3.2:
-  version "4.3.2"
-  resolved "https://registry.yarnpkg.com/orbit-db-store/-/orbit-db-store-4.3.2.tgz#c7ef88d80395a0cfb0cab861075d2ecded6b38d7"
-  integrity sha512-p+dZNhRT2dq25ii3mHabQKDBSsC6dtmqwzPidzADGSNPc/amE7grVGt82AL8/OJlQEHSqUs5Ei2pqkpbQGEcHg==
+orbit-db-store@^4.3.4:
+  version "4.3.4"
+  resolved "https://registry.yarnpkg.com/orbit-db-store/-/orbit-db-store-4.3.4.tgz#3dd0b42623abcf0f117f5c6b97dc86244ade393e"
+  integrity sha512-F50klxLEUTUgjzleq2jLzF/MIPxE4J7+HPEhCjK9s0OxfoqhixpCBNbEC0MAR+CR3vIh3gFhwkG23quWTb4K4w==
   dependencies:
     ipfs-log "^5.4.1"
     it-to-stream "^1.0.0"
@@ -23756,13 +23756,12 @@ orbit-db-store@^4.3.2:
     p-queue "^6.6.2"
     readable-stream "~3.6.0"
 
-orbit-db@^0.28.0:
-  version "0.28.0"
-  resolved "https://registry.yarnpkg.com/orbit-db/-/orbit-db-0.28.0.tgz#fd187cc266b300fccba2f95dade798632b3d72d2"
-  integrity sha512-lvqyG8fLKk8d35UqHGi3TVJUhR052MhXBaWahfvggcCBiHj8dSXBsQ5BkR+hK+vBIy0lKEQkhOFEKHhin8K1ig==
+orbit-db@^0.28.6:
+  version "0.28.6"
+  resolved "https://registry.yarnpkg.com/orbit-db/-/orbit-db-0.28.6.tgz#46c16a155544e4904ed1ed870b384d037dbbfeff"
+  integrity sha512-0rBtKhhTQiMvnPTLKS7Yu9rahNP2CLRvZEhlMEsxyfOsFLB5TiEfDayVBItfZ2oxhqamOumyItSwE9eBF0veIA==
   dependencies:
-    ipfs-pubsub-1on1 "~0.0.6"
-    is-electron "^2.2.0"
+    ipfs-pubsub-1on1 "0.0.8"
     is-node "^1.0.2"
     localstorage-down "^0.6.7"
     logplease "^1.2.14"
@@ -23779,7 +23778,8 @@ orbit-db@^0.28.0:
     orbit-db-kvstore "~1.12.0"
     orbit-db-pubsub "~0.6.0"
     orbit-db-storage-adapter "~0.5.3"
-    orbit-db-store "^4.3.2"
+    orbit-db-store "^4.3.4"
+    wherearewe "^1.0.2"
 
 orderedmap@^1.1.0:
   version "1.1.1"
@@ -32232,7 +32232,7 @@ whatwg-url@^8.0.0, whatwg-url@^8.5.0:
     tr46 "^2.1.0"
     webidl-conversions "^6.1.0"
 
-wherearewe@^1.0.0:
+wherearewe@^1.0.0, wherearewe@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/wherearewe/-/wherearewe-1.0.2.tgz#6129a5c5a4c90bdb5c0840d75906884c8420e423"
   integrity sha512-HyLZ7n1Yox+w1qWaFEgP/sMs5D7ka2UXmoVNaY0XzbEHLGljo4ScBchYm6cWRYNO33tmFX3Mgg4BiZkDOjihyw==
