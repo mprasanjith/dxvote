@@ -30,7 +30,7 @@
     "url": "https://github.com/DXgovernance/dxvote/issues"
   },
   "dependencies": {
-    "@0xsequence/multicall": "^0.35.5",
+    "@0xsequence/multicall": "^0.40.2",
     "@dnd-kit/core": "^5.0.3",
     "@dnd-kit/modifiers": "^5.0.0",
     "@dnd-kit/sortable": "^6.0.1",
