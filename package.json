@@ -70,7 +70,7 @@
     "hardhat": "^2.9.1",
     "hardhat-dependency-compiler": "^1.1.2",
     "i18next": "^21.6.16",
-    "ipfs": "^0.58.0",
+    "ipfs": "^0.64.0",
     "ipfs-only-hash": "^4.0.0",
     "json-keys-sort": "^2.1.0",
     "jsonexport": "^3.2.0",
