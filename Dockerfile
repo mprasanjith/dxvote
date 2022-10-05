@@ -5,7 +5,7 @@ WORKDIR /app/dxvote
 RUN yarn install --force
 RUN yarn build
 
-FROM --platform=linux/amd64 ubuntu:latest
+FROM --platform=linux/amd64 ubuntu:22.04
 COPY --from=builder /app/dxvote/build /build
 RUN apt-get update
 RUN apt-get -y install wget
