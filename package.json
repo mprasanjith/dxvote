@@ -115,7 +115,7 @@
     "typescript": "^4.5.5",
     "webpack": "4.44.2",
     "webpack-manifest-plugin": "^2.2.0",
-    "workbox-webpack-plugin": "^5.1.4"
+    "workbox-webpack-plugin": "^7.1.0"
   },
   "devDependencies": {
     "@storybook/addon-actions": "^6.4.22",
